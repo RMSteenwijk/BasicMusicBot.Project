@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using BasicMusicBot.Models;
 using BasicMusicBot.Extensions;
 using Serilog;
+using BasicMusicBot.Settings;
 
 namespace BasicMusicBot.Services
 {
@@ -14,9 +15,15 @@ namespace BasicMusicBot.Services
 
         public bool IsPlaying { get; set; }
 
+        public YoutubeQueueService(BotSettings settings)
+        {
+            _settings = settings;
+        }
+
         private Timer _timer;
 
         private IAudioClient _audioClient;
+        private readonly BotSettings _settings;
 
         public async Task StartAsync()
         {
@@ -54,8 +61,8 @@ namespace BasicMusicBot.Services
 
                 try
                 {
-                    await nextItem.DownloadYoutubeAudio();
-                    await nextItem.PlayYoutubeAudio(TargetVoiceChannel, _audioClient);
+                    await nextItem.DownloadYoutubeAudio(_settings);
+                    await nextItem.PlayYoutubeAudio(TargetVoiceChannel, _audioClient, _settings);
                 }
                 catch (OperationCanceledException)
                 {

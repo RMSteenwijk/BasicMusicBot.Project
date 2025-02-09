@@ -4,20 +4,21 @@ using Discord.WebSocket;
 using BasicMusicBot.Models;
 using Serilog;
 using System.Text;
+using BasicMusicBot.Settings;
 
 namespace BasicMusicBot.Extensions
 {
     public static class YoutubeQueueItemExtensions
     {
 
-        public static async Task PlayYoutubeAudio(this YoutubeQueueItem item, SocketVoiceChannel voiceChannel, IAudioClient audioClient)
+        public static async Task PlayYoutubeAudio(this YoutubeQueueItem item, SocketVoiceChannel voiceChannel, IAudioClient audioClient, BotSettings settings)
         {
             Log.Information($"[BOT], Attempted Playing: {item.VideoId}");
             using var audioStream = audioClient.CreatePCMStream(AudioApplication.Mixed);
-            using var fileStream = new FileStream($".\\CLIApps\\{item.VideoId}.opus", FileMode.Open);
+            using var fileStream = new FileStream($".\\{settings.RelativePathCLIApplications}\\{item.VideoId}.opus", FileMode.Open);
             using var tempMemoryStream = new MemoryStream();
 
-            await Cli.Wrap("CLIApps\\ffmpeg")
+            await Cli.Wrap($"{settings.RelativePathCLIApplications}\\ffmpeg")
                 .WithArguments($"-hide_banner -loglevel panic -ac 2 -f s16le -ar 48000 pipe:1 -i pipe:.mp3")
                 .WithStandardInputPipe(PipeSource.FromStream(fileStream))
                 .WithStandardOutputPipe(PipeTarget.ToStream(tempMemoryStream))
@@ -37,18 +38,18 @@ namespace BasicMusicBot.Extensions
                 await fileStream.FlushAsync();
                 await fileStream.DisposeAsync();
 
-                File.Delete($"CLIApps\\{item.VideoId}.opus");
+                File.Delete($"{settings.RelativePathCLIApplications}\\{item.VideoId}.opus");
             }
         }
 
-        public static async Task DownloadYoutubeAudio(this YoutubeQueueItem item)
+        public static async Task DownloadYoutubeAudio(this YoutubeQueueItem item, BotSettings settings)
         {
             Log.Information($"[BOT], Attempted Download: {item.VideoId}");
             var stdOutBuffer = new StringBuilder();
             var stdErrBuffer = new StringBuilder();
 
-            var command = Cli.Wrap(".\\CLIApps\\yt-dlp.exe")
-                .WithArguments($"-x {item.Url} --no-keep-video --output \".\\CLIApps\\%(id)s.%(ext)s\" --ffmpeg-location .\\CLIApps\\ffmpeg.exe")
+            var command = Cli.Wrap($".\\{settings.RelativePathCLIApplications}\\yt-dlp.exe")
+                .WithArguments($"-x {item.Url} --no-keep-video --output \".\\{settings.RelativePathCLIApplications}\\%(id)s.%(ext)s\" --ffmpeg-location .\\{settings.RelativePathCLIApplications}\\ffmpeg.exe")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer)); //Niet weghalen wij gebruiken de output niet maar die cli app wordt pissig als je ze niet uitleest ofzo
 

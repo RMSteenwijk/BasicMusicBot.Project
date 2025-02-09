@@ -92,6 +92,11 @@ public class Program
               .WriteTo.Console()
               .CreateLogger();
 
+        var botSettingsConfig = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: false)
+            .Build()
+            .GetSection("BotSettings").Get<BotSettings>();
+
         var youtubeQueueItem = new YoutubeQueueItem
         {
             VideoId = "GvfwUfbs82w",
@@ -100,7 +105,7 @@ public class Program
         };
 
 
-        await youtubeQueueItem.DownloadYoutubeAudio();
+        await youtubeQueueItem.DownloadYoutubeAudio(botSettingsConfig);
 
         await Task.Delay(-1);
     }
